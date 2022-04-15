@@ -63,7 +63,7 @@ end
   @test size(samples)[2] == N
   data_prob = empiricalprobability(samples)
   @test probs ≈ data_prob atol = 1e-2
-  
+
   ρ = runcircuit(N, gates; noise=("depolarizing", (p=0.01,)))
   ρ_mat = PastaQ.array(ρ)
   probs = real(diag(ρ_mat))
@@ -201,11 +201,11 @@ end
 @testset "getsamples: states" begin
   N = 3
   circuit = randomcircuit(N; depth = 3)
-  
+
   # quantum states
   ψ = runcircuit(N, circuit)
   ρ = runcircuit(N, circuit; noise=("depolarizing", (p=0.1,)))
-  
+
   nbases = 11
   bases = randombases(N, nbases)
   data = getsamples(ψ, bases)
@@ -229,11 +229,11 @@ end
       @test first.(data[(b-1)*nshots+k,:]) == bases[b,:]
     end
   end
-  
+
   # ITensors quantum states
   ψ = runcircuit(N, circuit; full_representation = true)
   ρ = runcircuit(N, circuit; noise=("depolarizing", (p=0.1,)), full_representation = true)
-  
+
   nbases = 11
   bases = randombases(N, nbases)
   data = getsamples(ψ, bases)
@@ -263,22 +263,22 @@ end
 
   N = 3
   circuit = randomcircuit(N; depth = 3)
-  
+
   # quantum processes
   U = runcircuit(N, circuit; process = true)
   Λ = runcircuit(N, circuit; noise=("depolarizing", (p=0.1,)), process = true)
-  
+
   npreps = 5
   nbases = 7
   preps = randompreparations(N, npreps)
   bases = randombases(N, nbases)
-  
+
   data = getsamples(U, preps, bases)
   @test size(data) == (npreps*nbases,N)
   nshots = 3
   data = getsamples(U, preps, bases, nshots)
   @test size(data) == (npreps*nbases*nshots,N)
-  
+
   for p in 1:npreps
     for b in 1:nbases
       for k in 1:nshots
@@ -289,12 +289,12 @@ end
       end
     end
   end
-  
+
   npreps = 5
   nbases = 5
   preps = randompreparations(N, npreps)
   bases = randombases(N, nbases)
-  
+
   data = getsamples(U, preps .=> bases)
   @test size(data) == (npreps,N)
 
@@ -304,7 +304,7 @@ end
   nshots = 3
   data = getsamples(Λ, preps, bases, nshots)
   @test size(data) == (npreps*nbases*nshots,N)
-  
+
   for p in 1:npreps
     for b in 1:nbases
       for k in 1:nshots
@@ -315,30 +315,30 @@ end
       end
     end
   end
-  
+
   npreps = 5
   nbases = 5
   preps = randompreparations(N, npreps)
   bases = randombases(N, nbases)
-  
+
   data = getsamples(Λ, preps .=> bases)
   @test size(data) == (npreps,N)
 
   # full representation
   U = runcircuit(N, circuit; process = true, full_representation = true)
   Λ = runcircuit(N, circuit; noise=("depolarizing", (p=0.1,)), process = true,full_representation = true)
-  
+
   npreps = 5
   nbases = 7
   preps = randompreparations(N, npreps)
   bases = randombases(N, nbases)
-  
+
   data = getsamples(U, preps, bases)
   @test size(data) == (npreps*nbases,N)
   nshots = 3
   data = getsamples(U, preps, bases, nshots)
   @test size(data) == (npreps*nbases*nshots,N)
-  
+
   for p in 1:npreps
     for b in 1:nbases
       for k in 1:nshots
@@ -349,13 +349,13 @@ end
       end
     end
   end
-  
+
   data = getsamples(Λ, preps, bases)
   @test size(data) == (npreps*nbases,N)
   nshots = 3
   data = getsamples(Λ, preps, bases, nshots)
   @test size(data) == (npreps*nbases*nshots,N)
-  
+
   for p in 1:npreps
     for b in 1:nbases
       for k in 1:nshots
@@ -367,4 +367,3 @@ end
     end
   end
 end
-

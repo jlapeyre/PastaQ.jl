@@ -409,7 +409,7 @@ function gradients(L::LPDO, data::Matrix{Pair{String,Int}}; sqrt_localnorms=noth
 
   grads = g_logZ + g_nll
   loss = logZ + nll
-  
+
   # TODO: check if this slows down the training
   # permute the gradients
   for j in 1:length(L)
@@ -419,6 +419,5 @@ function gradients(L::LPDO, data::Matrix{Pair{String,Int}}; sqrt_localnorms=noth
   return grads, loss
 end
 
-gradients(ψ::MPS, data::Matrix{Pair{String,Int}}; localnorms=nothing) = 
+gradients(ψ::MPS, data::Matrix{Pair{String,Int}}; localnorms=nothing) =
   gradients(LPDO(ψ), data; sqrt_localnorms=localnorms)
-

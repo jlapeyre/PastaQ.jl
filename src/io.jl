@@ -180,5 +180,3 @@ function printobserver(observer::Observer, print_metrics::Union{String,AbstractA
   end
   return
 end
-
-

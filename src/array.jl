@@ -45,7 +45,7 @@ function array(M::MPO; reverse::Bool=true)
   Mmat = prod(M) * dag(C) * C'
   c = combinedind(C)
   return ITensors.array(permute(Mmat, c', c))
- 
+
 end
 
 function array(L::LPDO{MPO}; reverse::Bool=true)
@@ -66,15 +66,15 @@ function array(L::LPDO{MPO}; reverse::Bool=true)
 end
 
 
-is_operator(T::ITensor) = 
+is_operator(T::ITensor) =
   !isempty(inds(T, plev = 1))
-  
+
 """
     PastaQ.array(T::ITensor; kwargs...)
 
 Transform a prod(MPS/MPO) into a dense vector/matrix
 """
-PastaQ.array(T::ITensor; kwargs...) = 
+PastaQ.array(T::ITensor; kwargs...) =
   (is_operator(T) ? tomatrix(T; kwargs...) : tovector(T; kwargs...))
 
 function tovector(M::ITensor; reverse::Bool = true)
@@ -123,7 +123,7 @@ function itensor(M::AbstractMatrix, sites::Vector{<:Index}; reverse::Bool = true
   return ITensors.itensor(M, sites', ITensors.dag(sites))
 end
 
-function itensor(v::AbstractVector, sites::Vector{<:Index}; reverse::Bool = true) 
+function itensor(v::AbstractVector, sites::Vector{<:Index}; reverse::Bool = true)
   sites = reverse ? Base.reverse(sites) : sites
   return ITensors.itensor(v, sites)
 end

@@ -98,7 +98,7 @@ function expect(T₀::ITensor, ops::AbstractString...; kwargs...)
         Top = replaceprime(T * op(ops[n], s'), 2 => 1, tags = "Site, n=$j")
         ex[n][j - offset] = real(tr(Top) / normalization)
       else
-        ex[n][j - offset] = real(scalar(dag(T) * noprime(op(ops[n], s) * T))) / normalization 
+        ex[n][j - offset] = real(scalar(dag(T) * noprime(op(ops[n], s) * T))) / normalization
       end
     end
   end
@@ -111,4 +111,3 @@ function expect(T₀::ITensor, ops::AbstractString...; kwargs...)
 end
 
 @non_differentiable ITensors.name(::Any)
-

@@ -11,7 +11,7 @@ end
 const gate = op
 
 # Random Haard unitary:
-# 
+#
 # Reference: http://math.mit.edu/~edelman/publications/random_matrix_theory.pdf
 function gate(::GateName"RandomUnitary", ::SiteType"Qubit", s::Index...;
               eltype = ComplexF64,
@@ -21,7 +21,7 @@ function gate(::GateName"RandomUnitary", ::SiteType"Qubit", s::Index...;
 end
 
 
-gate(::GateName"randU", t::SiteType"Qubit", s::Index...; kwargs...) = 
+gate(::GateName"randU", t::SiteType"Qubit", s::Index...; kwargs...) =
   gate("RandomUnitary", s...; kwargs...)
 
 gate(::OpName"Id", ::SiteType"Qubit") = [1 0; 0 1]
@@ -96,7 +96,7 @@ end
 
 randomparams(::GateName, args...; kwargs...) = NamedTuple()
 
-randomparams(::GateName"RandomUnitary", N::Int = 1; eltype = ComplexF64, rng = Random.GLOBAL_RNG) = 
+randomparams(::GateName"RandomUnitary", N::Int = 1; eltype = ComplexF64, rng = Random.GLOBAL_RNG) =
   (random_matrix = randn(rng, eltype, 1<<N, 1<<N),)
 
 randomparams(s::AbstractString; kwargs...) = randomparams(GateName(s); kwargs...)
@@ -104,4 +104,3 @@ randomparams(s::AbstractString; kwargs...) = randomparams(GateName(s); kwargs...
 function randomparams(s::AbstractString, args...; kwargs...)
   return randomparams(GateName(s), args...; kwargs...)
 end
-

@@ -73,7 +73,7 @@ end
   @test PastaQ.array(prod(ψ)) ≈ PastaQ.array(prod(runcircuit(N, gates)))
   @test PastaQ.array(prod(ψ)) ≈ PastaQ.array(prod(runcircuit(gates)))
   @test PastaQ.array(ψ) ≈ PastaQ.array(runcircuit(gates; full_representation = true))
-  
+
   ϕ = runcircuit(ψ0, gates; apply_dag = false)
   @test ϕ ≈ ψ
   σ = runcircuit(ψ0, gates; apply_dag = true)
@@ -85,7 +85,7 @@ end
   X = runcircuit(prod(ρ0), buildcircuit(ρ0, gates); apply_dag=true)
   @test prod(ρ) ≈ runcircuit(prod(ρ0), buildcircuit(ρ0, gates); apply_dag=true)
   @test PastaQ.array(ρ) ≈ PastaQ.array(runcircuit(prod(ρ0),gates; full_representation = true, apply_dag = true))
-  
+
 end
 
 @testset "runcircuit: (n>2)-qubit gates" begin
@@ -164,7 +164,7 @@ end
   N = 5
   depth = 4
   gates = randomcircuit(N; depth =  depth, layered=false)
-  
+
   ψ0 = productstate(N)
   ρ = runcircuit(ψ0, gates; noise=("depolarizing", (p=0.1,)))
   ρ0 = MPO(ψ0)
@@ -206,7 +206,7 @@ end
   @test PastaQ.ischoi(Φ)
   @test PastaQ.array(Λ) ≈ PastaQ.array(Φ)
   @test Φ isa ITensor
-  
+
   noisycircuit = insertnoise(circuit, (1 => ("DEP",(p=0.001,)), 2=> ("DEP",(p=0.01,))))
   Φ = choimatrix(noisycircuit)
   @test Φ isa MPO
@@ -232,5 +232,3 @@ end
   ρ = runcircuit(ψ, circuit)
   @test PastaQ.array(ρ0) ≈ PastaQ.array(ρ)
 end
-
-

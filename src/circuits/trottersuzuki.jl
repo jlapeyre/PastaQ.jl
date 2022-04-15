@@ -1,10 +1,10 @@
-function getsites(g) 
+function getsites(g)
   x = filter(x -> x isa Tuple, g)
   isempty(x) && return x
   return only(x)
 end
 
-sort_gates_by(g) = 
+sort_gates_by(g) =
   TupleTools.sort(getsites(g))
 
 function sort_gates_lt(g1, g2)
@@ -14,7 +14,7 @@ function sort_gates_lt(g1, g2)
   return g1 < g2
 end
 
-sort_gates(gates) = 
+sort_gates(gates) =
   sort(gates; by=sort_gates_by, lt=sort_gates_lt)
 
 
@@ -28,9 +28,9 @@ function trotter1(H::Vector{<:Tuple}, δτ::Number)
   for k in 1:length(H)
     length(H[k]) > 3 && error("Only the format (coupling, opname, support) currently allowed")
     coupling, Hdata... = H[k]
-    layer=vcat(layer,[(x -> exp(-δτ * coupling * x), Hdata...)]) 
+    layer=vcat(layer,[(x -> exp(-δτ * coupling * x), Hdata...)])
   end
-  return layer 
+  return layer
 end
 
 
@@ -45,12 +45,12 @@ function trotter2(H::Vector{<:Tuple}, δτ::Number)
 end
 
 function trotter4(H::Vector{<:Tuple}, δτ::Number)
-  δτ1 = δτ / (4 - 4^(1/3)) 
+  δτ1 = δτ / (4 - 4^(1/3))
   δτ2 = δτ - 4 * δτ1
-  
+
   tebd2_δ1 = trotter2(H, δτ1)
   tebd2_δ2 = trotter2(H, δτ2)
-  
+
   tebd4 = vcat(tebd2_δ1,tebd2_δ1)
   tebd4 = vcat(tebd4, tebd2_δ2)
   tebd4 = vcat(tebd4, vcat(tebd2_δ1,tebd2_δ1))
@@ -58,22 +58,22 @@ function trotter4(H::Vector{<:Tuple}, δτ::Number)
 end
 
 """
-    trotterlayer(H::OpSum; order::Int = 2, kwargs...) 
+    trotterlayer(H::OpSum; order::Int = 2, kwargs...)
 Generate a single layer of gates for one step of TEBD.
 """
 function trotterlayer(H::Vector{<:Tuple}, δτ::Number; order::Int = 2)
-  order == 1 && return trotter1(H, δτ) 
-  order == 2 && return trotter2(H, δτ) 
+  order == 1 && return trotter1(H, δτ)
+  order == 2 && return trotter2(H, δτ)
   error("Automated Trotter circuits with order > 2 not yet implemented")
   # TODO: understand weird behaviour of trotter4
-  #order == 4 && return trotter4(H, δτ) 
+  #order == 4 && return trotter4(H, δτ)
   #error("Automated Trotter circuits with order > 2 not yet implemented")
 end
 
 function _trottercircuit(H::Vector{<:Vector{Tuple}}, τs::Vector; order::Int = 2, layered::Bool = false, kwargs...)
   @assert length(H) == (length(τs) -1) || length(H) == length(τs)
   δτs = diff(τs)
-  circuit = [trotterlayer(H[t], δτs[t]; order = order) for t in 1:length(δτs)] 
+  circuit = [trotterlayer(H[t], δτs[t]; order = order) for t in 1:length(δτs)]
   layered && return circuit
   return reduce(vcat, circuit)
 end
@@ -82,7 +82,7 @@ end
 #XXX simplified version for Zygote
 function _trottercircuit(H::Vector{<:Tuple}, τs::Vector; order::Int = 2, layered::Bool = false, kwargs...)
   nlayers = length(τs) - 1
-  # XXX: Zygote: this breaks (?) 
+  # XXX: Zygote: this breaks (?)
   #circuit = [trotterlayer(H, τ; order = order) for τ in τs]
   #!layered && return reduce(vcat, circuit)
   #return circuit
@@ -92,7 +92,7 @@ function _trottercircuit(H::Vector{<:Tuple}, τs::Vector; order::Int = 2, layere
   return reduce(vcat, [layer for _ in 1:nlayers])
 end
 
-trottercircuit(H; kwargs...) = 
+trottercircuit(H; kwargs...) =
   _trottercircuit(H, get_times(;kwargs...); kwargs...)
 
 
@@ -100,22 +100,22 @@ trottercircuit(H; kwargs...) =
 get_times(; δt=nothing, δτ=nothing, t=nothing, τ=nothing, ts=nothing, τs=nothing, kwargs...) = get_times(δt, δτ, t, τ, ts, τs)
 
 
-get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Vector,  τs::Nothing)   = im .* ts 
-get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Nothing, τs::Vector)    = τs 
+get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Vector,  τs::Nothing)   = im .* ts
+get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Nothing, τs::Vector)    = τs
 
 function get_times(δt::Nothing, δτ::Number, t::Nothing, τ::Number, ts::Nothing, τs::Nothing)
   depth = abs(τ / δτ)
   (depth-Int(floor(depth)) > 1e-5) && @warn "Incommensurate Trotter step!"
-  return collect(0.0:δτ:τ) 
+  return collect(0.0:δτ:τ)
 end
 
 get_times(δt::Number, δτ::Nothing, t::Number, τ::Nothing, ts::Nothing, τs::Nothing) =
   im .* get_times(δτ, δt, τ, t, ts, τs)
 
-get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::AbstractRange, τs::Nothing)       = 
-  get_times(δt, δτ, t, τ, collect(ts), τs) 
+get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::AbstractRange, τs::Nothing)       =
+  get_times(δt, δτ, t, τ, collect(ts), τs)
 
-get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Nothing,       τs::AbstractRange) = 
+get_times(δt::Nothing, δτ::Nothing, t::Nothing, τ::Nothing, ts::Nothing,       τs::AbstractRange) =
   get_times(δt, δτ, t, τ, ts, collect(τs))
 
 
@@ -130,4 +130,3 @@ get_times(δt::Nothing,  δτ::Nothing, t::Number, τ::Nothing, ts::Nothing, τs
 
 get_times(δt::Nothing,  δτ::Nothing, t::Nothing, τ::Number, ts::Nothing, τs::Nothing)   =
   error("Imaginary Trotter step `δτ` not set.")
-

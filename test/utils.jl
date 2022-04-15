@@ -56,4 +56,3 @@ end
   @test plev(inds(V[1]; tags="Qubit")[1]) == 1
   @test plev(inds(V[1]; tags="Qubit")[2]) == 0
 end
-

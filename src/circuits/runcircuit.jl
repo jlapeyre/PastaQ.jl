@@ -9,7 +9,7 @@
 Compile a circuit from a lazy representation into a vector of `ITensor`.
 For example, a gate element of `circuit`, `("gn", (i,j))` is turned into a rrank-4 tensor corresponding to the `i` and `j` element of `hilbert`.
 
-If `noise` is passed, the corresponding Kraus operator are inserted appropriately 
+If `noise` is passed, the corresponding Kraus operator are inserted appropriately
 after the gates in the circuit.
 """
 function buildcircuit(
@@ -26,7 +26,7 @@ function buildcircuit(
   return circuit_tensors
 end
 
-function buildcircuit(hilbert::Vector{<:Index}, circuit::Vector{<:Vector{<:Any}}; kwargs...) 
+function buildcircuit(hilbert::Vector{<:Index}, circuit::Vector{<:Vector{<:Any}}; kwargs...)
   circuit_tensors = Vector{Vector{ITensor}}()
   for layer in circuit
     circuit_tensors = vcat(circuit_tensors, [buildcircuit(hilbert, layer; kwargs...)])
@@ -34,27 +34,27 @@ function buildcircuit(hilbert::Vector{<:Index}, circuit::Vector{<:Vector{<:Any}}
   return circuit_tensors
 end
 
-buildcircuit(M::Union{MPS,MPO,ITensor}, args...; kwargs...) = 
+buildcircuit(M::Union{MPS,MPO,ITensor}, args...; kwargs...) =
   buildcircuit(originalsiteinds(M), args...; kwargs...)
 
 """
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-                            TENSOR NETWORK SIMULATOR                                   
+                            TENSOR NETWORK SIMULATOR
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 """
 
 @doc raw"""
-    runcircuit(circuit::Any; kwargs...) 
+    runcircuit(circuit::Any; kwargs...)
 
 Execute quantum circuit (see below).
 """
-runcircuit(circuit::Any; kwargs...) = 
+runcircuit(circuit::Any; kwargs...) =
   runcircuit(nqubits(circuit), circuit; kwargs...)
 
 
-runcircuit(N::Int, circuit::Any; kwargs...) = 
+runcircuit(N::Int, circuit::Any; kwargs...) =
   runcircuit(qubits(N), circuit; kwargs...)
 
 @doc raw"""
@@ -62,23 +62,23 @@ runcircuit(N::Int, circuit::Any; kwargs...) =
 
 Execute quantum circuit on Hilbert space `hilbert` (see below).
 """
-runcircuit(hilbert::Vector{<:Index}, circuit::Tuple; kwargs...) = 
+runcircuit(hilbert::Vector{<:Index}, circuit::Tuple; kwargs...) =
   runcircuit(hilbert, [circuit]; kwargs...)
 
 
 @doc raw"""
     runcircuit(hilbert::Vector{<:Index}, circuit::Vector;
                full_representation::Bool = false,
-               process::Bool = false, 
+               process::Bool = false,
                noise = nothing,
                kwargs...)
 
     runcircuit(M::Union{MPS, MPO, ITensor}, circuit::Union{Tuple, AbstractVector};
-               full_representation::Bool = false, noise = nothing, kwargs...) 
+               full_representation::Bool = false, noise = nothing, kwargs...)
 
 Run the circuit corresponding to a list of quantum gates on a system of ``n`` qubits,
-with input Hilbert space `hilbert`. The specific method of this general function is 
-specified by the keyword arguments `process` and `noise`. 
+with input Hilbert space `hilbert`. The specific method of this general function is
+specified by the keyword arguments `process` and `noise`.
 
 By default (`process = false` and `noise = nothing`), `runcircuit` returns an MPS
 wavefunction corresponding to the contraction of each quantum gate in `circuit` with
@@ -111,13 +111,13 @@ we by default represent with its Choi matrix:
 If `full_representation = true`, the contraction is performed without approximation,
 leading to an output object whose size scales exponentiall with ``n``
 """
-function runcircuit(hilbert::Vector{<:Index}, 
+function runcircuit(hilbert::Vector{<:Index},
                     circuit::Vector;
                     full_representation::Bool = false,
-                    process::Bool = false, 
+                    process::Bool = false,
                     noise = nothing,
                     kwargs...)
-  
+
   # this step is required to check whether there is already noise in the circuit
   # which was added using the `insertnoise` function. If so, one should call directly
   # the `choimatrix` function.
@@ -128,27 +128,27 @@ function runcircuit(hilbert::Vector{<:Index},
     inds_sizes = vcat([[length(inds(g)) for g in layer] for layer in circuit_tensors]...)
   end
   noiseflag = any(x -> x % 2 == 1, inds_sizes)
-  
+
   # Unitary operator for the circuit
-  if process && !noiseflag 
+  if process && !noiseflag
     U₀ = full_representation ? prod(productoperator(hilbert)) : productoperator(hilbert)
-    return runcircuit(U₀, circuit_tensors; 
-                      apply_dag = false, 
-                      kwargs...) 
-  end 
+    return runcircuit(U₀, circuit_tensors;
+                      apply_dag = false,
+                      kwargs...)
+  end
   # Choi matrix
-  if process && noiseflag 
-    return choimatrix(hilbert, vcat(circuit_tensors...); 
+  if process && noiseflag
+    return choimatrix(hilbert, vcat(circuit_tensors...);
                       full_representation = full_representation,
                       kwargs...)
   end
-  
-  M₀ = full_representation ? prod(productstate(hilbert)) : productstate(hilbert) 
-  return runcircuit(M₀, circuit_tensors; kwargs...) 
+
+  M₀ = full_representation ? prod(productstate(hilbert)) : productstate(hilbert)
+  return runcircuit(M₀, circuit_tensors; kwargs...)
 end
 
 function runcircuit(M::Union{MPS, MPO, ITensor}, circuit::Union{Tuple, AbstractVector};
-           full_representation::Bool = false, noise = nothing, kwargs...) 
+           full_representation::Bool = false, noise = nothing, kwargs...)
   if !(M isa ITensor)
     M = full_representation ? prod(M) : M
   end
@@ -169,12 +169,12 @@ end
       print_metrics = [],
       kwargs...)
 
-Apply a quantum circuit to an input state `M`, where the circuit is built out of a 
+Apply a quantum circuit to an input state `M`, where the circuit is built out of a
 sequence of layers of quantum gates. The input state may be an MPS wavefunction
 ``|\psi\rangle``, an MPO density operator ``ρ`` (or unitary operator ``U``), etc.
 
 By feeding a "layered" circuit, we can enable measurement and keep track of metrics
-as a function of the circuit's depth. 
+as a function of the circuit's depth.
 
 Other than the keyword arguments of the high-level interface, here we can provide:
 + `(observer!)`: observer object (from Observers.jl).
@@ -264,7 +264,7 @@ end
       move_sites_back::Bool=true,
       kwargs...)
 
-Apply a set of "gate" tensors (alredy in the form of `ITensor`) to an input 
+Apply a set of "gate" tensors (alredy in the form of `ITensor`) to an input
 state `M`, with options:
 + `apply_dag = nothing`: whether to perform conjugate evolution.
 + `cutoff = 1e-15`: truncation cutoff in SVD.
@@ -272,10 +272,10 @@ state `M`, with options:
 + `svd_alg = "divide_and_conquer"`: SVD algorithm (see ITensors.jl).
 + `move_sites_back = true`: move sites back after long-range gate.
 
-By default, `apply_dag = nothing` and the interface is dictated by the input state, 
+By default, `apply_dag = nothing` and the interface is dictated by the input state,
 and whether or not the vector of `ITensor` containins rank-3 noisy tensors (i.e. Kraus operators).
 
-For an input MPS ``|\psi_0\rangle``, with a unitary circuit, the output is 
+For an input MPS ``|\psi_0\rangle``, with a unitary circuit, the output is
 ```math
 |\psi\rangle = U_M\dots U_2 U_1|\psi_0\rangle
 ```
@@ -395,13 +395,13 @@ end
 """
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-                                  CHOI MATRIX                                   
+                                  CHOI MATRIX
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 """
 
 @doc raw"""
-    choimatrix(circuit::Vector{<:Any}; kwargs...) = 
+    choimatrix(circuit::Vector{<:Any}; kwargs...) =
     choimatrix(sites::Vector{<:Index}, circuit::Vector{<:Any}; kwargs...)
     choimatrix(sites::Vector{<:Index}, circuit_tensors::Vector{<:ITensor};
                full_representation = false,kwargs...)
@@ -415,28 +415,28 @@ Compute the Choi matrix for a noisy channel
 If `full_representation = true`, the contraction is performed without approximation,
 leading to an output object whose size scales exponentiall with ``n``
 """
-choimatrix(circuit::Vector{<:Any}; kwargs...) = 
+choimatrix(circuit::Vector{<:Any}; kwargs...) =
   choimatrix(nqubits(circuit), circuit; kwargs...)
 
-choimatrix(N::Int, circuit::Vector{<:Any}; kwargs...) = 
+choimatrix(N::Int, circuit::Vector{<:Any}; kwargs...) =
   choimatrix(qubits(N), circuit; kwargs...)
 
-choimatrix(sites::Vector{<:Index}, circuit::Vector{<:Any}; noise = nothing, kwargs...) = 
+choimatrix(sites::Vector{<:Index}, circuit::Vector{<:Any}; noise = nothing, kwargs...) =
   choimatrix(sites, buildcircuit(sites, circuit; noise = noise); kwargs...)
 
-choimatrix(sites::Vector{<:Index}, circuit_tensors::Vector{<:Vector{<:ITensor}}; kwargs...) = 
+choimatrix(sites::Vector{<:Index}, circuit_tensors::Vector{<:Vector{<:ITensor}}; kwargs...) =
   choimatrix(sites, vcat(circuit_tensors...); kwargs...)
 
 function choimatrix(sites::Vector{<:Index}, circuit_tensors::Vector{<:ITensor};
                     full_representation = false,
                     kwargs...)
-  
+
   Λ₀ = unitary_mpo_to_choi_mpo(productoperator(sites))
-  
+
   inds_sizes = [length(inds(g)) for g in circuit_tensors]
   noiseflag = any(x -> x % 2 == 1, inds_sizes)
   !noiseflag && error("choi matrix requires noise")
-  
+
   for tensor in circuit_tensors
     addtags!(tensor, "Output")
   end
@@ -448,15 +448,15 @@ end
 """
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-                               EXACT SIMULATOR                                   
+                               EXACT SIMULATOR
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 """
 
-function runcircuit(T::ITensor, 
-    circuit_tensors::Vector{<:ITensor}; 
+function runcircuit(T::ITensor,
+    circuit_tensors::Vector{<:ITensor};
     apply_dag = nothing, kwargs...)
-  
+
   # Check if gate_tensors contains Kraus operators
   inds_sizes = [length(inds(g)) for g in circuit_tensors]
   noiseflag = any(x -> x % 2 == 1 , inds_sizes)
@@ -488,5 +488,3 @@ function runcircuit(T::ITensor,
     return Tc
   end
 end
-
-

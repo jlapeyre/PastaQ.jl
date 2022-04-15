@@ -1,19 +1,19 @@
 @doc raw"""
-    tomography(data::Matrix{Pair{String, Int}}, sites::Vector{<:Index}; 
-               method::String = "linear_inversion", 
-               fillzeros::Bool = true, 
+    tomography(data::Matrix{Pair{String, Int}}, sites::Vector{<:Index};
+               method::String = "linear_inversion",
+               fillzeros::Bool = true,
                trρ::Number = 1.0,
                max_iters::Int = 10000,
                kwargs...)
-  
-    tomography(data::Matrix{Pair{String,Pair{String, Int}}}, sites::Vector{<:Index}; 
+
+    tomography(data::Matrix{Pair{String,Pair{String, Int}}}, sites::Vector{<:Index};
                method::String="linear_inversion", kwargs...)
 
-Run full quantum tomography for a set of input measurement data `data`. If the input data 
+Run full quantum tomography for a set of input measurement data `data`. If the input data
 consists of a list of `Pair{String, Int}`, it is interpreted as quantum state tomography. Each
-data point is a single measurement outcome, e.g. `"X" => 1` to refer to a measurement in the `X` basis 
+data point is a single measurement outcome, e.g. `"X" => 1` to refer to a measurement in the `X` basis
 with binary outcome `1`. If instead the input data is a collection of `Pair{String,Pair{String, Int}}`,
-it is interpreted as quantum process tomography, with each data-point corresponding to having input a 
+it is interpreted as quantum process tomography, with each data-point corresponding to having input a
 given state to the channel, followed by a measurement in a basis, e.g.  `"X+" => ("Z" => 0)` referring to an
 input ``|+\rangle`` state, followed by a measurement in the `Z` basis with outcome `0`.
 
@@ -21,29 +21,29 @@ There are three methods to perform tomography (we show state tomography here as 
 1. `method = "linear_inversion"` (or `"LI"`): optimize a variational density matrix ``\rho`` (or Choi matrix)1
 
 
-2. `method = "least_squares"` (or `"LS"`): 
+2. `method = "least_squares"` (or `"LS"`):
 
-3. `method = "maximum_likelihood"` (or `"ML"`): 
+3. `method = "maximum_likelihood"` (or `"ML"`):
 """
-tomography(data::Matrix{Pair{String, Int}}; method::String="linear_inversion", fillzeros::Bool=true, kwargs...) = 
+tomography(data::Matrix{Pair{String, Int}}; method::String="linear_inversion", fillzeros::Bool=true, kwargs...) =
   tomography(empirical_probabilities(data; fillzeros=fillzeros), siteinds("Qubit", size(data,2)); method = method, kwargs...)
 
-tomography(data::Matrix{Pair{String, Int}}, sites::Vector{<:Index}; method::String="linear_inversion", fillzeros::Bool=true, kwargs...) = 
+tomography(data::Matrix{Pair{String, Int}}, sites::Vector{<:Index}; method::String="linear_inversion", fillzeros::Bool=true, kwargs...) =
   tomography(empirical_probabilities(data; fillzeros=fillzeros), sites; method = method, kwargs...)
 
-tomography(data::Matrix{Pair{String,Pair{String, Int}}}; kwargs...) = 
+tomography(data::Matrix{Pair{String,Pair{String, Int}}}; kwargs...) =
   tomography(data, siteinds("Qubit", size(data,2)); kwargs...)
 
 function tomography(data::Matrix{Pair{String,Pair{String, Int}}}, sites::Vector{<:Index};
-                    method::String="linear_inversion", 
-                    fillzeros::Bool=true, 
-                    kwargs...) 
+                    method::String="linear_inversion",
+                    fillzeros::Bool=true,
+                    kwargs...)
   sites_in  = addtags.(sites, "Input")
   sites_out = addtags.(sites, "Output")
   process_sites = Index[]
-  for j in 1:size(data,2) 
-    push!(process_sites, sites_in[j]) 
-    push!(process_sites, sites_out[j]) 
+  for j in 1:size(data,2)
+    push!(process_sites, sites_in[j])
+    push!(process_sites, sites_out[j])
   end
   tomography(empirical_probabilities(data; fillzeros=fillzeros), process_sites; method = method, process = true, kwargs...)
 end
@@ -64,11 +64,11 @@ measurements in a set of bases:
 ```math
 C(\theta) = -\frac{1}{|D|}\sum_{k=1}^{|D|} \log P(x_k^{(b)})
 ```
-where the cost function is computed as 
+where the cost function is computed as
 ```math
 C(\theta) = -\frac{1}{|D|}\sum_{k=1}^{|D|} \log |\langle x_k|U_b|\psi(\theta)\rangle|^2
 ```
-for input MPS variational wavefunction, and 
+for input MPS variational wavefunction, and
 ```math
 C(\theta) = -\frac{1}{|D|}\sum_{k=1}^{|D|} \log \langle x_k|U_b \rho(\theta) U_b^\dagger|x_k\rangle
 ```
@@ -85,7 +85,7 @@ where ``\xi`` is the input state to the channel. The cost function is computed a
 C(\theta) = -\frac{1}{|D|}\sum_{k=1}^{|D|} \log |\langle x_k|U_b|\tilde\Phi(\theta)\rangle|^2
 ```
 for input MPO variational unitary operator (trated as a MPS ``|\Phi\rangle`` after appropriate
-vectorization), and 
+vectorization), and
 ```math
 C(\theta) = -\frac{1}{|D|}\sum_{k=1}^{|D|} \log \langle x|U_b \tilde\Lambda(\theta) U_b^\dagger|x\rangle
 ```
@@ -129,13 +129,13 @@ function tomography(
   model = copy(L)
   isqpt = train_data isa Matrix{Pair{String,Pair{String,Int}}}
   localnorm = isqpt ? 2.0 : 1.0
-  
+
   # observer is not passed but earlystop is called
   observer! = (isnothing(observer!) || earlystop) ? Observer() : observer!
-  
+
   # observer is defined
   if !isnothing(observer!)
-    observer!["train_loss"] = nothing 
+    observer!["train_loss"] = nothing
     if !isnothing(test_data)
       observer!["test_loss"] = nothing
     end
@@ -143,13 +143,13 @@ function tomography(
     if earlystop
       stop_if(; loss::Vector) = stoptomography_ifloss(; loss = loss, ϵ = 1e-3, min_iter = 50, window = 50)
       observer!["earlystop"] = stop_if
-    end 
+    end
   end
 
   # initialize optimizer
   st = PastaQ.state(opt, model)
   optimizer = (opt, st)
-  
+
   @assert size(train_data, 2) == length(model)
   !isnothing(test_data) && @assert size(test_data)[2] == length(model)
 
@@ -174,10 +174,10 @@ function tomography(
 
         normalized_model = copy(model)
         sqrt_localnorms = []
-        normalize!(normalized_model; 
-                   (sqrt_localnorms!)=sqrt_localnorms, 
+        normalize!(normalized_model;
+                   (sqrt_localnorms!)=sqrt_localnorms,
                    localnorm=localnorm)
-        
+
         grads, loss = gradients(
           normalized_model,
           batch;
@@ -192,15 +192,15 @@ function tomography(
     end # end @elapsed
     !isnothing(observer!) && push!(last(observer!["train_loss"]), train_loss)
     observe_time += ep_time
-    
+
     # measurement stage
     if ep % observe_step == 0
       normalized_model = copy(model)
       sqrt_localnorms = []
-      normalize!(normalized_model; 
-                 (sqrt_localnorms!)=sqrt_localnorms, 
+      normalize!(normalized_model;
+                 (sqrt_localnorms!)=sqrt_localnorms,
                  localnorm=localnorm)
-      
+
       if !isnothing(test_data)
         test_loss = nll(normalized_model, test_data)
         !isnothing(observer!) && push!(last(observer!["test_loss"]), test_loss)
@@ -214,10 +214,10 @@ function tomography(
 
       # update observer
       if !isnothing(observer!)
-        loss = (!isnothing(test_data) ? results(observer!, "test_loss") : 
+        loss = (!isnothing(test_data) ? results(observer!, "test_loss") :
                                         results(observer!, "train_loss"))
-        
-        model_to_observe = (isqpt && (normalized_model isa LPDO{MPS}) ? choi_mps_to_unitary_mpo(normalized_model) : 
+
+        model_to_observe = (isqpt && (normalized_model isa LPDO{MPS}) ? choi_mps_to_unitary_mpo(normalized_model) :
                                   !isqpt && (normalized_model isa LPDO{MPS}) ? normalized_model.X :
                                                                                normalized_model)
         update!(observer!, model_to_observe; train_loss = train_loss,
@@ -226,10 +226,10 @@ function tomography(
       end
 
       # printing
-      if outputlevel ≥ 1 
+      if outputlevel ≥ 1
         @printf("%-4d  ", ep)
         @printf("⟨logP⟩ = %-4.4f  ", train_loss)
-        if !isnothing(test_data) 
+        if !isnothing(test_data)
           @printf("(%.4f)  ", test_loss)
         end
         # TODO: add the trace preserving cost function here for QPT
@@ -261,18 +261,18 @@ function tomography(
 end
 
 # QST
-tomography(data::Matrix{Pair{String,Int}}, ψ::MPS; kwargs...) = 
+tomography(data::Matrix{Pair{String,Int}}, ψ::MPS; kwargs...) =
   tomography(data, LPDO(ψ); kwargs...).X
 
-tomography(train_data::Vector{<:Vector{Pair{String,Int}}}, args...; kwargs...) = 
+tomography(train_data::Vector{<:Vector{Pair{String,Int}}}, args...; kwargs...) =
   tomography(permutedims(hcat(train_data...)), args...; kwargs...)
 
 
 # QPT
-tomography(data::Matrix{Pair{String,Pair{String,Int}}}, U::MPO; kwargs...) = 
+tomography(data::Matrix{Pair{String,Pair{String,Int}}}, U::MPO; kwargs...) =
   choi_mps_to_unitary_mpo(tomography(data, LPDO(unitary_mpo_to_choi_mps(U)); kwargs...))
 
-tomography(train_data::Vector{<:Vector{Pair{String,Pair{String,Int}}}}, args...; kwargs...) = 
+tomography(train_data::Vector{<:Vector{Pair{String,Pair{String,Int}}}}, args...; kwargs...) =
   tomography(permutedims(hcat(train_data...)), args...; kwargs...)
 
 
@@ -281,7 +281,7 @@ tomography(train_data::Vector{<:Vector{Pair{String,Pair{String,Int}}}}, args...;
 EARLY STOPPING FUNCTIONS
 """
 
-#stopif_fidelity(M1, M2; ϵ::Number, kwargs...) 
+#stopif_fidelity(M1, M2; ϵ::Number, kwargs...)
 #  fidelity(M1,M2) ≤ ϵ
 
 function stoptomography_ifloss(; loss::Vector, ϵ::Number, min_iter::Number, window::Number)

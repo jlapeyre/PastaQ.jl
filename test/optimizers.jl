@@ -19,7 +19,7 @@ end
 @testset "get/set parameters" begin
   N = 3
   sites = siteinds("Qubit",N)
-  
+
   # MPS WAVEFUNCTION
   ψ = randomstate(sites; χ = 4)
   θ = PastaQ.getparameters(LPDO(ψ))
@@ -28,14 +28,14 @@ end
   PastaQ.setparameters!(ϕ, θ)
   @test PastaQ.array(ψ) ≈ PastaQ.array(ϕ.X)
 
-  # LPDO (state) 
+  # LPDO (state)
   ρ = randomstate(sites; χ = 4, ξ = 3)
   θ = PastaQ.getparameters(ρ)
-  σ = randomstate(sites; χ = 4, ξ = 3) 
+  σ = randomstate(sites; χ = 4, ξ = 3)
   PastaQ.setparameters!(σ, θ)
   @test PastaQ.array(ρ) ≈ PastaQ.array(σ)
-  
-  # UNITARY 
+
+  # UNITARY
   U = LPDO(PastaQ.unitary_mpo_to_choi_mps(randomprocess(sites; χ = 4)))
   θ = PastaQ.getparameters(U)
   V = LPDO(PastaQ.unitary_mpo_to_choi_mps(randomprocess(sites; χ = 4)))
@@ -57,13 +57,13 @@ end
   data = PastaQ.convertdatapoints(randompreparations(N, nsamples))
 
   ψ = randomstate(N; χ=χ)
-  opt = Optimisers.Descent(0.1) 
+  opt = Optimisers.Descent(0.1)
   st = PastaQ.state(opt, ψ)
   ∇, _ = PastaQ.gradients(LPDO(ψ), data)
-   
+
   ϕ = LPDO(copy(ψ))
-  ϕ = PastaQ.update!(ϕ, ∇, (opt,st)) 
-  ψp = copy(ψ) 
+  ϕ = PastaQ.update!(ϕ, ∇, (opt,st))
+  ψp = copy(ψ)
   for j in 1:N
     ψp[j] = ψp[j] - 0.1*∇[j]
   end
@@ -77,13 +77,13 @@ end
   data = PastaQ.convertdatapoints(randompreparations(N, nsamples))
 
   ρ = randomstate(N; χ=χ,ξ = 2)
-  opt = Optimisers.Descent(0.1) 
+  opt = Optimisers.Descent(0.1)
   st = PastaQ.state(opt, ρ)
   ∇, _ = PastaQ.gradients(ρ, data)
-  
+
   γ = copy(ρ)
-  γ = PastaQ.update!(γ, ∇, (opt,st)) 
-  ρp = copy(ρ) 
+  γ = PastaQ.update!(γ, ∇, (opt,st))
+  ρp = copy(ρ)
   for j in 1:N
     ρp.X[j] = ρp.X[j] - 0.1*∇[j]
   end
@@ -103,14 +103,14 @@ end
   U = randomprocess(N; χ=χ)
   Φ = LPDO(PastaQ.unitary_mpo_to_choi_mps(U))
   PastaQ.normalize!(Φ; localnorm=2)
-  
-  opt = Optimisers.Descent(0.1) 
+
+  opt = Optimisers.Descent(0.1)
   st = PastaQ.state(opt, Φ)
   ∇, _ = PastaQ.gradients(Φ, data)
 
   γ = copy(Φ)
-  γ = PastaQ.update!(γ, ∇, (opt,st)) 
-  Φp = copy(Φ) 
+  γ = PastaQ.update!(γ, ∇, (opt,st))
+  Φp = copy(Φ)
   for j in 1:N
     Φp.X[j] = Φp.X[j] - 0.1*∇[j]
   end
@@ -129,18 +129,17 @@ end
 
   Λ = randomprocess(N; χ=χ, ξ = 3)
   PastaQ.normalize!(Λ; localnorm=2)
-  
-  opt = Optimisers.Descent(0.1) 
+
+  opt = Optimisers.Descent(0.1)
   st = PastaQ.state(opt, Λ)
-  
+
   ∇, _ = PastaQ.gradients(Λ, data)
 
   γ = copy(Λ)
-  γ = PastaQ.update!(γ, ∇, (opt,st)) 
-  Λp = copy(Λ) 
+  γ = PastaQ.update!(γ, ∇, (opt,st))
+  Λp = copy(Λ)
   for j in 1:N
     Λp.X[j] = Λp.X[j] - 0.1*∇[j]
   end
   @test PastaQ.array(γ) ≈ PastaQ.array(Λp)
 end
-

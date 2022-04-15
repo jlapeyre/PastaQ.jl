@@ -158,7 +158,7 @@ end
   for j in 1:length(N)
     @test firstind(ρ.X[j]; tags="Site", plev=0) == firstind(ρ0.X[j]; tags="Site", plev=0)
   end
-  
+
   ψ = randomstate(N; χ = χ, normalize = true)
   @test norm(ψ) ≈ 1.0
   ρ = randomstate(N; χ = χ, ξ = 2, normalize = true)
@@ -202,7 +202,7 @@ end
     @test firstind(Λ.X[j]; tags="Input") == firstind(Λ0.X[j]; tags="Input")
     @test firstind(Λ.X[j]; tags="Output") == firstind(Λ0.X[j]; tags="Output")
   end
-  
+
   U = randomprocess(N; χ = χ, normalize = true)
   Λ = MPO(PastaQ.unitary_mpo_to_choi_mps(U))
   @test tr(Λ) ≈ 1 << N

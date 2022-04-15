@@ -34,60 +34,60 @@ function finite_difference(f, A, B, pars)
   end
 end
 
-@testset "fidelity optimization with MPS" begin 
+@testset "fidelity optimization with MPS" begin
   Random.seed!(1234)
   N = 4
-  
+
   function Rylayer(θ⃗)
     return [("Rx", (n,), (θ=θ⃗[n],)) for n in 1:N]
   end
-  
+
   function RXXlayer(ϕ⃗)
     return [("RXX", (n, n + 1), (ϕ = ϕ⃗[n],)) for n in 1:(N÷2)]
   end
-  
+
   # The variational circuit we want to optimize
   function variational_circuit(pars)
     θ⃗, ϕ⃗ = pars
     return vcat(Rylayer(θ⃗),RXXlayer(ϕ⃗), Rylayer(θ⃗), RXXlayer(ϕ⃗))
   end
-  
+
   function f(ψ, ϕ, pars)
     circuit = variational_circuit(pars)
     U = buildcircuit(ψ, circuit)
     ψθ = runcircuit(ψ, U)
     return abs2(inner(ϕ, ψθ))
   end
-  
+
   θ⃗ = 2π .* rand(N)
   ϕ⃗ = 2π .* rand(N÷2)
-  pars = [θ⃗, ϕ⃗]  
+  pars = [θ⃗, ϕ⃗]
   # ITensor
   q = qubits(N)
   ψ = productstate(q)
   ϕ = randomstate(q; χ = 10, normalize = true)
-  
+
   finite_difference(f, prod(ψ), prod(ϕ), pars)
   # MPS
   finite_difference(f, ψ, ϕ, pars)
 end
 
-@testset "fidelity optimization w MPO & apply_dag = true" begin 
+@testset "fidelity optimization w MPO & apply_dag = true" begin
   Random.seed!(1234)
   N = 4
   q = qubits(N)
-  
+
   Rylayer(θ⃗) = [("Ry", (n,), (θ=θ⃗[n],)) for n in 1:N]
   Rxlayer(θ⃗) = [("Rx", (n,), (θ=θ⃗[n],)) for n in 1:N]
   RYYlayer(ϕ⃗) = [("RYY", (n, n + 1), (ϕ = ϕ⃗[n],)) for n in 1:(N÷2)]
   RXXlayer(ϕ⃗) = [("RXX", (n, n + 1), (ϕ = ϕ⃗[n],)) for n in 1:(N÷2)]
-  
-  
+
+
   # The variational circuit we want to optimize
   function variational_circuit(pars)
     θ⃗, ϕ⃗ = pars
     return [Rylayer(θ⃗);
-            Rxlayer(ϕ⃗); 
+            Rxlayer(ϕ⃗);
             Rylayer(ϕ⃗);
             Rxlayer(θ⃗);
             RXXlayer(θ⃗[1:N÷2]);
@@ -103,59 +103,59 @@ end
   ψ = randomstate(q; χ = 10, normalize = true)
   ρ = outer(ψ, ψ)
   ϕ = randomstate(q; χ = 1, normalize = true)
-  
+
   θ⃗ = 2π .* rand(N)
   ϕ⃗ = 2π .* rand(N)
   pars = [θ⃗, ϕ⃗]
-  
+
   finite_difference(f, prod(ρ), prod(ϕ), pars)
   finite_difference(f, ρ, ϕ, pars)
-  
+
 end
 
-@testset "fidelity optimization w MPO & apply_dag = false" begin 
+@testset "fidelity optimization w MPO & apply_dag = false" begin
   Random.seed!(1234)
   N = 4
   q = qubits(N)
-  
+
   Rylayer(θ⃗) = [("Ry", (n,), (θ=θ⃗[n],)) for n in 1:N]
   Rxlayer(θ⃗) = [("Rx", (n,), (θ=θ⃗[n],)) for n in 1:N]
   RYYlayer(ϕ⃗) = [("RYY", (n, n + 1), (ϕ = ϕ⃗[n],)) for n in 1:(N÷2)]
   RXXlayer(ϕ⃗) = [("RXX", (n, n + 1), (ϕ = ϕ⃗[n],)) for n in 1:(N÷2)]
-  
-  
+
+
   # The variational circuit we want to optimize
   function variational_circuit(pars)
     θ⃗, ϕ⃗ = pars
     return [Rylayer(θ⃗);
-            Rxlayer(ϕ⃗); 
+            Rxlayer(ϕ⃗);
             Rylayer(ϕ⃗);
             Rxlayer(θ⃗);
             RXXlayer(θ⃗[1:N÷2]);
             RYYlayer(ϕ⃗[1:N÷2])]
   end
-  
+
   function f(ρ, ϕ, pars)
     circuit = variational_circuit(pars)
     U = buildcircuit(q, circuit)
     ρθ = runcircuit(ρ, U; apply_dag = false)
-    return real(inner(ϕ', ρθ, ϕ))   
+    return real(inner(ϕ', ρθ, ϕ))
   end
 
   ψ = randomstate(q; χ = 10, normalize = true)
   ρ = outer(ψ, ψ)
   ϕ = randomstate(q; χ = 10, normalize = true)
-  
+
   θ⃗ = 2π .* rand(N)
   ϕ⃗ = 2π .* rand(N)
   pars = [θ⃗, ϕ⃗]
   finite_difference(f, prod(ρ), prod(ϕ), pars)
   finite_difference(f, ρ, ϕ, pars)
-  
+
 end
 
 
-@testset "rayleigh_quotient" begin 
+@testset "rayleigh_quotient" begin
   function Rylayer(N, θ⃗)
     return [("Ry", (n,), (θ=θ⃗[n],)) for n in 1:N]
   end
@@ -165,25 +165,25 @@ end
   function CXlayer(N)
     return [("CX", (n, n + 1)) for n in 1:2:(N - 1)]
   end
-  
+
   # The variational circuit we want to optimize
   function variational_circuit(θ⃗)
     N = length(θ⃗)
     return vcat(Rylayer(N, θ⃗),CXlayer(N), Rxlayer(N, θ⃗), Rylayer(N, θ⃗), CXlayer(N), Rxlayer(N, θ⃗))
   end
-  
+
   Random.seed!(1234)
   N = 4
-  
+
   q = qubits(N)
-  
+
   os = OpSum()
   for k in 1:N-1
     os += 1.0, "Z",k,"Z",k+1
     os += 1.0,"X",k
   end
   O = MPO(os,q)
-  
+
   function f(ψ, O, pars)
     circuit = variational_circuit(pars)
     ψθ = runcircuit(ψ, circuit)
@@ -198,7 +198,7 @@ end
 
 
 
-@testset "rayleigh_quotient with noise" begin 
+@testset "rayleigh_quotient with noise" begin
   function Rylayer(N, θ⃗)
     return [("Ry", n, (θ=θ⃗[n],)) for n in 1:N]
   end
@@ -208,17 +208,17 @@ end
   function CXlayer(N)
     return [("CX", (n, n + 1)) for n in 1:2:(N - 1)]
   end
-  
+
   # The variational circuit we want to optimize
   function variational_circuit(θ⃗)
     N = length(θ⃗)
     return vcat(Rylayer(N, θ⃗),CXlayer(N), Rxlayer(N, θ⃗), CXlayer(N))
   end
-  
+
   Random.seed!(1234)
   N = 2
   q = qubits(N)
-  
+
   os = OpSum()
   for k in 1:N-1
     os += -1.0, "Z",k,"Z",k+1
@@ -226,11 +226,11 @@ end
   end
   os += -1.0,"X",N
   O = MPO(os,q)
- 
+
   pars = 2π .* rand(N)
   ψ₀ = productstate(q)
   ρ₀ = outer(ψ₀, ψ₀)
-  
+
   function f1(pars)
     circuit = variational_circuit(pars)
     U = buildcircuit(q, circuit)
@@ -239,7 +239,7 @@ end
   end
   f1_eval = f1(pars)
   f1_grad = f1'(pars)
-  
+
   function f2(pars)
     circuit = variational_circuit(pars)
     U = buildcircuit(q, circuit)
@@ -278,8 +278,8 @@ end
 
 @testset "fidelity optimization - Trotter circuit" begin
   N = 4
-  
-  import PastaQ:gate 
+
+  import PastaQ:gate
   @eval gate(::GateName"ZZ") = kron(gate("Z", SiteType("Qubit")), gate("Z", SiteType("Qubit")))
   function hamiltonian(θ)
     H = Tuple[]
@@ -305,6 +305,6 @@ end
   ψ = productstate(q)
   ϕ = randomstate(q; χ = 10, normalize = true)
   H = hamiltonian(pars)
-  circuit = trottercircuit(H; ts = ts) 
+  circuit = trottercircuit(H; ts = ts)
   finite_difference(f, ψ, ϕ, pars)
 end

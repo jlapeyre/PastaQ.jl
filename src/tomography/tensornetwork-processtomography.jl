@@ -1,5 +1,5 @@
 """
-    nll(L::LPDO{MPS},data::Matrix{Pair{String,Pair{String, Int}}}) 
+    nll(L::LPDO{MPS},data::Matrix{Pair{String,Pair{String, Int}}})
 
 Compute the negative log-likelihood of process data using a MPO ansatz
 for the vectorized unitary operator.
@@ -388,7 +388,7 @@ function gradnll(
 end
 
 """
-    gradTP(L::LPDO, gradlogZ::Vector{<:ITensor}, 
+    gradTP(L::LPDO, gradlogZ::Vector{<:ITensor},
            logZ::Float64; sqrt_localnorms = nothing)
 
 Compute the gradients of the trace-preserving regularization.
@@ -551,13 +551,12 @@ function gradients(
   if !isnothing(trace_preserving_regularizer)
     grads += trace_preserving_regularizer * g_TP
   end
-  
+
   # TODO: check if this slows down the training
   # permute the gradients
   for j in 1:length(L)
     grads[j] = permute(grads[j], inds(L.X[j])...)
   end
-  
+
   return grads, loss
 end
-

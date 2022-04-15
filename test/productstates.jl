@@ -48,13 +48,13 @@ end
         statesYm[1] * statesXp[2] * statesYm[3] * statesXp[4]
 
   ψ = runcircuit(s, ghz(4))
-  ϕ = productstate(ψ, fill("0", length(s))) ≈ ψ0 
-  
+  ϕ = productstate(ψ, fill("0", length(s))) ≈ ψ0
+
   n = 4
   ψ = productstate(n; dim = 3)
   @test length(ψ) == n
   @test length(PastaQ.array(ψ)) == 3^n
-  
+
   n = 2
   s = qudits(n; dim = 3)
   ψ = productstate(n, [0,2]; dim = 3)

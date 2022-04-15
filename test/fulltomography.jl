@@ -120,7 +120,7 @@ end
   d = 2^(2*N)
   nshots = 3
   gates = randomcircuit(N; depth = 2)
-  
+
   Λ = runcircuit(gates; process = true,noise = ("DEP",(p=0.001,)))
   preps = fullpreparations(N)
   bases = fullbases(N)
@@ -128,7 +128,7 @@ end
 
   Λmat = PastaQ.array(Λ)
   Λvec = vec(Λmat)
-  
+
   probs = PastaQ.empirical_probabilities(data)
   A = PastaQ.design_matrix(probs; return_probs = false, process = true)
   real_probs = A * Λvec
@@ -174,8 +174,7 @@ end
     s = firstind(ρ, tags="Output,n=$(j)", plev=0)
     ρ = ρ * δ(s,s')
   end
-  
+
   ρmat = PastaQ.array(ρ)
   @test ρmat ≈ Matrix{Float64}(I,d,d) atol = 1e-5
 end
-

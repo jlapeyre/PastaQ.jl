@@ -23,22 +23,22 @@ using Random
   end
 
   N = 3
-  
+
   # MPS
   circuit = randomcircuit(N; depth = 4)
-  ψ = runcircuit(circuit; full_representation = true) 
+  ψ = runcircuit(circuit; full_representation = true)
   @test PastaQ.nsites(ψ) == N
   # MPO
-  U = runcircuit(circuit; full_representation = true, process = true) 
+  U = runcircuit(circuit; full_representation = true, process = true)
   @test PastaQ.nsites(U) == N
   # LPDO DM
-  ρ = prod(randomstate(N; ξ = 2)) 
+  ρ = prod(randomstate(N; ξ = 2))
   @test PastaQ.nsites(ρ) == N
-  
+
   # MPO Choi
-  Λ = runcircuit(circuit; noise = ("DEP",(p=0.01,)), full_representation = true, process = true) 
+  Λ = runcircuit(circuit; noise = ("DEP",(p=0.01,)), full_representation = true, process = true)
   @test PastaQ.nsites(Λ) == N
-  Λ = prod(randomprocess(N; ξ = 2)) 
+  Λ = prod(randomprocess(N; ξ = 2))
   @test PastaQ.nsites(Λ) == N
 end
 
@@ -87,7 +87,7 @@ end
   @test haskey(pars,:θ)
   @test haskey(pars,:ϕ)
   @test haskey(pars,:λ)
-  
+
   pars = PastaQ.randomparams("RandomUnitary",2)
   @test haskey(pars,:random_matrix)
   @test size(pars[:random_matrix]) == (4,4)
@@ -135,7 +135,7 @@ end
   Ly = 5
   circuit = randomcircuit((Lx,Ly); depth = depth, twoqubitgates="RandomUnitary", onequbitgates=["Rn", "X"])
   @test nqubits(circuit) == Lx*Ly
-  
+
   Lx = 5
   Ly = 5
   circuit = randomcircuit((Lx,Ly); depth = depth,  twoqubitgates="RandomUnitary", onequbitgates=["Rn", "X"], rotated = true)
@@ -152,16 +152,15 @@ end
   dagcircuit = dag(circuit)
   V = PastaQ.array(runcircuit(dagcircuit; process = true))
   @test U ≈ V'
-  
+
   circuit = randomcircuit(N; depth = depth, twoqubitgates = "RandomUnitary", onequbitgates = "Rn", layered = false)
   U = PastaQ.array(runcircuit(circuit; process = true))
   dagcircuit = dag(circuit)
   V = PastaQ.array(runcircuit(dagcircuit; process = true))
   @test U ≈ V'
-  
+
   dagdagcircuit = dag(dagcircuit)
   Up = PastaQ.array(runcircuit(dagdagcircuit; process = true))
   @test U ≈ Up
 
 end
-

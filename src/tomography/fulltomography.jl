@@ -1,20 +1,20 @@
-function tomography(probabilities::Dict{Tuple,<:Dict}, sites::Vector{<:Index}; 
-                    method::String="linear_inversion", 
-                    fillzeros::Bool=true, 
+function tomography(probabilities::Dict{Tuple,<:Dict}, sites::Vector{<:Index};
+                    method::String="linear_inversion",
+                    fillzeros::Bool=true,
                     process::Bool = false,
                     trρ::Number = 1.0,
                     max_iters::Int=10000,
                     kwargs...)
-  
+
   # Generate the projector matrix corresponding to the probabilities.
   A, p = design_matrix(probabilities; return_probs = true, process = process)
-  
+
   if (method == "LI"  || method == "linear_inversion")
     # Invert the Born rule and reshape
     ρ_vec = pinv(A) * p
     d = Int(sqrt(size(ρ_vec,1)))
     ρ̂ = reshape(ρ_vec,(d,d))
-    
+
     ρ̂ .= ρ̂ * (trρ / tr(ρ̂))
     # Make PSD
     ρ̂ = make_PSD(ρ̂)
@@ -22,13 +22,13 @@ function tomography(probabilities::Dict{Tuple,<:Dict}, sites::Vector{<:Index};
     d = Int(sqrt(size(A,2)))
     N = Int(sqrt(d))
     n = N ÷ 2
-    
+
     # Variational density matrix
     ρ = Convex.ComplexVariable(d,d)
-    
-    if (method == "LS"  || method == "least_squares") 
+
+    if (method == "LS"  || method == "least_squares")
       # Minimize the cost function C = ||A ρ⃗ - p̂||²
-      cost_function = Convex.norm(A * vec(ρ) - p) 
+      cost_function = Convex.norm(A * vec(ρ) - p)
     elseif (method == "MLE" || method == "maximum_likelihood")
       # Minimize the negative log likelihood:
       cost_function = - p' * Convex.log(real(A * vec(ρ)) + 1e-10)
@@ -39,8 +39,8 @@ function tomography(probabilities::Dict{Tuple,<:Dict}, sites::Vector{<:Index};
                                       MLS : maximum likelihood")
     end
 
-    # Contrained the trace and enforce positivity and hermitianity 
-    if process 
+    # Contrained the trace and enforce positivity and hermitianity
+    if process
       function tracepreserving(ρ)
         for j in 1:n
           subsystem_dims = [2 for _ in 1:(N+1-j)]
@@ -48,14 +48,14 @@ function tomography(probabilities::Dict{Tuple,<:Dict}, sites::Vector{<:Index};
         end
         return ρ
       end
-      
+
       constraints = [Convex.tr(ρ) == (1<<n) * trρ
                     Convex.isposdef(ρ)
                     tracepreserving(ρ) == Matrix{Float64}(I,1<<n,1<<n)
                     ρ == ρ']
     else
-      constraints = [Convex.tr(ρ) == trρ 
-                     Convex.isposdef(ρ) 
+      constraints = [Convex.tr(ρ) == trρ
+                     Convex.isposdef(ρ)
                      ρ == ρ']
     end
     # Use Convex.jl to solve the optimization
@@ -70,14 +70,14 @@ end
 """
     measurement_counts(samples::Matrix{Pair{String, Int}}; fillzeros::Bool = true)
 
-Generate a dictionary containing the measurement counts for a set 
+Generate a dictionary containing the measurement counts for a set
 of projectors, given a set of single-shot samples with different
 measurement bases (i.e. QST).
 """
 function measurement_counts(samples::Matrix{Pair{String, Int}}; fillzeros::Bool = true)
   counts = Dict{Tuple,Dict}()
   N = size(samples,2)
-  
+
   if N > 8
     error("Full QST restricted to N ≤ 8")
   end
@@ -86,7 +86,7 @@ function measurement_counts(samples::Matrix{Pair{String, Int}}; fillzeros::Bool 
     # Extract the measurement basis and  and outcome
     basis    = Tuple(first.(samples[n,:]))
     outcome  = Tuple(last.(samples[n,:]))
-    
+
     # If new basis, add dictionary
     if !haskey(counts,basis)
       counts[basis] = Dict{Tuple,Int64}()
@@ -97,7 +97,7 @@ function measurement_counts(samples::Matrix{Pair{String, Int}}; fillzeros::Bool 
     end
     counts[basis][outcome] += 1
   end
-  
+
   if fillzeros
     # Fill the counts with zeros for bitstring never observed
     for (k1,v1) in counts
@@ -112,13 +112,13 @@ function measurement_counts(samples::Matrix{Pair{String, Int}}; fillzeros::Bool 
   return counts
 end
 
-measurement_counts(samples::Matrix{String}; kwargs...) = 
+measurement_counts(samples::Matrix{String}; kwargs...) =
   measurement_counts(convertdatapoints(samples); kwargs...)
 
 """
     measurement_counts(data::Matrix{Pair{String,Pair{String, Int}}}; fillzeros::Bool = true)
 
-Generate a dictionary containing the measurement counts for a set 
+Generate a dictionary containing the measurement counts for a set
 of input states and measurement projectors (i.e. QPT).
 """
 function measurement_counts(data::Matrix{Pair{String,Pair{String, Int}}}; fillzeros::Bool = true)
@@ -139,7 +139,7 @@ function measurement_counts(data::Matrix{Pair{String,Pair{String, Int}}}; fillze
     end
     push!(newdata, tmp)
   end
-  return measurement_counts(permutedims(hcat(newdata...)); fillzeros = fillzeros) 
+  return measurement_counts(permutedims(hcat(newdata...)); fillzeros = fillzeros)
 end
 
 
@@ -150,14 +150,14 @@ Compute the probabilities from a set of measurement counts.
 """
 function empirical_probabilities(counts::Dict{Tuple,Dict})
   probs = Dict{Tuple,Dict{Tuple,Float64}}(deepcopy(counts))
-  
+
   for basis in keys(probs)
     # Get count dictionary for 2^N projectors in this basis
     counts_in_basis = probs[basis]
-    
+
     # Total number of counts
     tot_counts = sum(values(counts_in_basis))
-    
+
     # Build probabilities
     for projector in keys(counts_in_basis)
       probs[basis][projector] /= tot_counts
@@ -166,14 +166,14 @@ function empirical_probabilities(counts::Dict{Tuple,Dict})
   return probs
 end
 
-empirical_probabilities(samples::Array; fillzeros::Bool=true) = 
+empirical_probabilities(samples::Array; fillzeros::Bool=true) =
   empirical_probabilities(measurement_counts(samples;fillzeros=fillzeros))
 
 """
     projector_matrix(probs::AbstractDict; process::Bool = false, return_probs::Bool = false)
 
 Return the projector matrix, where each row corresponds to the vectorized
-projector into different measurement bases contained into an input 
+projector into different measurement bases contained into an input
 probability dictionary.
 
 If `return_probs=true`, return also the 1d vector of probabilities (i.e. the
@@ -189,7 +189,7 @@ function design_matrix(probs::AbstractDict; process::Bool = false, return_probs:
       Π_list = []
       for j in 1:length(outcome)
         g = 0.5 * (gate("Id", st) + (1-2*outcome[j]) * gate(basis[j], st))
-        Πj = process && isodd(j) ? g' : g 
+        Πj = process && isodd(j) ? g' : g
         push!(Π_list,Πj)
       end
       Π = reduce(kron,Π_list)
@@ -197,7 +197,7 @@ function design_matrix(probs::AbstractDict; process::Bool = false, return_probs:
       push!(p̂,probability)
     end
   end
-  
+
   return_probs && return copy(transpose(hcat(A...))), float.(p̂)
   return copy(transpose(hcat(A...)))
 end
@@ -231,4 +231,3 @@ function make_PSD(ρ::AbstractArray{<:Number,2})
   end
   return ρ_PSD
 end
-
